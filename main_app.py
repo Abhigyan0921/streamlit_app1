@@ -126,32 +126,56 @@ def heatmap():
         st.title("No Data to Display")
 
 def outlier_stacked_chart():
-    outlier_by_unit = pd.read_csv('outlier_unit_wise.csv')
-    month_filter = list(st.sidebar.multiselect('Select Transaction Month', sorted(list(outlier_by_unit['Transaction_Month'].unique()))))
-    if 'All' in month_filter or len(month_filter)==0:
-        month_filter = ['All']
-    filtered_df = outlier_by_unit.copy()
-    if month_filter==['All']:
-        pass
-    elif month_filter!=["All"]:
-        filtered_df = filtered_df[(filtered_df['Transaction_Month'].isin(month_filter))]
-    try:
-        filtered_df.set_index("Unit_Number", inplace=True)
-        filtered_df.drop(columns="Transaction_Month", inplace=True)
-        ax = filtered_df.plot(kind='barh', stacked=True, figsize=(12, 8),color=['#4682B4','#FFC0CB'])
-        for container in ax.containers:
-            for rect in container:
-                width = rect.get_width()
-                if width != 0.0:  # Skip annotation for zero width bars
-                    ax.text(rect.get_x() + width / 2, rect.get_y() + rect.get_height() / 2, f'{width:.1f}%', ha='center', va='center', color='black')
+    data = {
+    'Unit_Number': [4411, 4411, 4411, 4411, 4411, 4411, 637, 637, 637, 637, 526, 1857, 637, 1857, 1566, 4083, 1857],
+    'Transaction_Month': [10, 7, 9, 11, 12, 8, 11, 6, 9, 12, 7, 12, 10, 11, 12, 6, 10],
+    'Percent_Clean_Transactions': [87.12, 88.07, 89.68, 89.83, 90.55, 90.66, 97.05, 97.11, 97.16, 98.17, 98.34, 98.56, 98.57, 98.64, 98.66, 98.76, 98.85],
+    'Percent_Outlier_Transactions': [12.88, 11.93, 10.32, 10.17, 9.45, 9.34, 2.95, 2.89, 2.84, 1.83, 1.66, 1.44, 1.43, 1.36, 1.34, 1.24, 1.15]
+    }
     
-        plt.title('Percentage of Clean and Outlier Transactions by Month and Unit Number')
-        plt.xlabel('Percentage')
-        plt.ylabel('Unit Number')
-        plt.legend(title='Transaction Type',bbox_to_anchor=(1,1),loc='upper left')
-        st.pyplot(plt)
-    except:
-        st.title("No Data to Display")
+    df = pd.DataFrame(data)
+    # ---- MAINPAGE ----
+    st.title(":bar_chart: Outlier_By_Unit")
+    st.markdown("##")
+    
+    
+    # TOP KPI's
+    Units = 6
+    average_outlier_transaction = round(df["Percent_Outlier_Transactions"].mean(), 1)
+    
+    average_clean_transaction = round(df["Percent_Clean_Transactions"].mean(), 2)
+    
+    left_column, middle_column, right_column = st.columns(3)
+    with left_column:
+        st.subheader("Units:6")
+    
+    with right_column:
+        st.subheader("Avg_outlier_transaction:")
+        st.subheader(f"{average_outlier_transaction} %")
+    
+    
+    st.markdown("""---""")
+    
+    # Calculate average percentages per unit
+    avg_percentages = df.groupby('Unit_Number')[['Percent_Clean_Transactions', 'Percent_Outlier_Transactions']].mean()
+    avg_percentages = avg_percentages.sort_values(by='Percent_Outlier_Transactions', ascending=False)
+    
+    # Plotting
+    ax = avg_percentages.plot(kind='barh', stacked=True, figsize=(12, 8),color=['#0083B8','#D3D3D3'])
+    #avg_percentages.plot(kind='barh', stacked=True, figsize=(10, 6))
+    for container in ax.containers:
+        for rect in container:
+            width = rect.get_width()
+            if width != 0.0:  # Skip annotation for zero width bars
+                ax.text(rect.get_x() + width / 2, rect.get_y() + rect.get_height() / 2, f'{width:.3f}%', ha='center', va='center', color='black')
+    
+    plt.xlabel('Percentage')
+    plt.ylabel('Unit')
+    plt.title('Average Transaction Percentages by Unit')
+    plt.legend(title='Transaction Type',bbox_to_anchor=(1,1),loc='upper left')
+    #plt.legend(['Clean', 'Outlier'])
+    #plt.show()
+    st.pyplot(plt)
 
 
 st.sidebar.title("Navigation")
