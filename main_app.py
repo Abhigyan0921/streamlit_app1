@@ -14,8 +14,6 @@ def outliers_by_detail_name():
     if 'All' in detail_name_filter or len(detail_name_filter)==0:
         detail_name_filter = ['All']
     filtered_df = outlier_by_detail_name.copy()
-    print("OUTLET FILTER - ",outlet_filter)
-    print("DETAIL NAME FILTER - ",detail_name_filter)
     if outlet_filter==['All'] and detail_name_filter==['All']:
         pass
     elif outlet_filter!=["All"] and detail_name_filter!=["All"]:
@@ -127,8 +125,37 @@ def heatmap():
     except:
         st.title("No Data to Display")
 
+def outlier_stacked_chart():
+    outlier_by_unit = pd.read_csv('outlier_unit_wise.csv')
+    month_filter = list(st.sidebar.multiselect('Select Transaction Month', sorted(list(outlier_by_unit['Transaction_Month'].unique()))))
+    if 'All' in month_filter or len(month_filter)==0:
+        month_filter = ['All']
+    filtered_df = outlier_by_unit.copy()
+    if month_filter==['All']:
+        pass
+    elif month_filter!=["All"]:
+        filtered_df = filtered_df[(filtered_df['Transaction_Month'].isin(month_filter))]
+    try:
+        filtered_df.set_index("Unit_Number", inplace=True)
+        filtered_df.drop(columns="Transaction_Month", inplace=True)
+        ax = filtered_df.plot(kind='barh', stacked=True, figsize=(12, 8),color=['#4682B4','#FFC0CB'])
+        for container in ax.containers:
+            for rect in container:
+                width = rect.get_width()
+                if width != 0.0:  # Skip annotation for zero width bars
+                    ax.text(rect.get_x() + width / 2, rect.get_y() + rect.get_height() / 2, f'{width:.1f}%', ha='center', va='center', color='black')
+    
+        plt.title('Percentage of Clean and Outlier Transactions by Month and Unit Number')
+        plt.xlabel('Percentage')
+        plt.ylabel('Unit Number')
+        plt.legend(title='Transaction Type',bbox_to_anchor=(1,1),loc='upper left')
+        st.pyplot(plt)
+    except:
+        st.title("No Data to Display")
+
+
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Outliers by Detail Name", "Outliers by Units","Weekly Trends for Labour Forecast","Non-Drillable Items"])
+page = st.sidebar.radio("Go to", ["Outliers by Detail Name", "Outliers by Units","Weekly Trends for Labour Forecast","Non-Drillable Items","Outliers_Unitwise_Stacked_chart"])
 
 if page == "Outliers by Detail Name":
     outliers_by_detail_name()
@@ -138,5 +165,6 @@ elif page == "Weekly Trends for Labour Forecast":
     heatmap()
 elif page=="Non-Drillable Items":
     non_drillable_items()
-
+elif page == "Outliers_Unitwise_Stacked_chart":
+    outlier_stacked_chart()
 
